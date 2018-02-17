@@ -98,14 +98,14 @@ app.post('/getbydate', (req, res) => {
 		db.collection('cars').find({"departureDate": {"$gte":start, "$lt":end} }).toArray((err,results) =>{
 
 			var data = [];
-			results.forEach(function(element){
-				if (element.currentKg+kg <= element.maxKg)
-				{
-				
-					data.push(element)
-				}
-				
-			  });
+				results.forEach(function(element){
+					if (parseInt(element.currentKg, 10) + parseInt(kg, 10)<= element.maxKg)
+					{
+					
+						data.push(element)
+					}
+					
+					});
 
 
 			res.json({
@@ -144,7 +144,7 @@ app.post('/addpacket', (req, res) => {
 	
 	console.log(carID)
 	
-	var updatedata ={ '$addToSet': {'packetlist': [userID,packageKG]}};
+	
 	//var updatedata={ '$push': {'packetlist': "userID"}};
 	db.collection('cars').findOne(query, function(err, r1) {
 		
@@ -153,13 +153,11 @@ app.post('/addpacket', (req, res) => {
 			 
 		}else
 		{
-			if (r1.currentKg + packageKG <= r1.maxKg){
+			if (parseInt(r1.currentKg, 10) + parseInt(packageKG, 10)  <= r1.maxKg ){
 
-
+				var updatedata ={  $set :{ "currentKg": parseInt(r1.currentKg, 10) + parseInt(packageKG, 10) },'$addToSet': {'packetlist': [userID,packageKG]}};
 				db.collection("cars").updateOne(query, updatedata, function(err, r2) {
 					if (err){
-
-						
 
 						console.log(err)
 						console.log(r2)
@@ -197,11 +195,47 @@ app.post('/addpacket', (req, res) => {
 })
 
 app.get('/getorders', (req, res) => {
-	console.log(req.params)
-	console.log("Params")
-	console.log(req.params.id)
+	var user_id = req.query['id'];
+	console.log(user_id)
 
+
+	db.collection('packets').find({"userID":user_id}).toArray((err,results) =>{
+
+		if (err){
+				res.json({
+					"code":-1,
+					"msg":"eror",
+				});
+
+		}else{
+
+			var data = [];			
+			console.log(results.length)
+			console.log(results)
+			for (var i=0; i<results.length; i++) {
+				var item=results[i]
+				
+				var query = {'_id': new ObjectId(item.carID)};
+
+				db.collection('cars').findOne(query, function(err, car) {
+					console.log(car)
+					
+					console.log(results[i])
+					console.log("-----")
+					console.log(results[i])
+				});	
+				
+			}
+			res.json({
+				"code":0,
+				"msg":"succes",
+				"data":results
+			});
+		}
+		})
+		
 })
+		
 
 app.get('/', (req, res) => {
 	console.log("first path")
