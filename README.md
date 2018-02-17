@@ -19,6 +19,6 @@
 
 <h2>Team</h2>
 <b>Patos Team</b><br/>
-<b>Fatih Altuntaş</b> .. Database & NodeJS connection
-<b>Ahmet Görünücü</b> .. NodeJS & Android connection
-<b>Halil İbrahim Açıkgöz</b>
+<b>Fatih Altuntaş</b> .. Database & NodeJS connection <br/>
+<b>Ahmet Görünücü</b> .. NodeJS & Android connection <br/>
+<b>Halil İbrahim Açıkgöz</b> <br/>
