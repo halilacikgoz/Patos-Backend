@@ -1,12 +1,10 @@
 const express = require('express');
 const app = express();
 const MongoClient = require('mongodb').MongoClient
-
+var ObjectId = require('mongodb').ObjectID;
 const bodyParser = require('body-parser');
-
-
-//app.use(bodyParser.urlencoded({extended: true}))
-app.use(bodyParser.json())
+app.use(bodyParser.urlencoded({extended: true}))
+//app.use(bodyParser.json())
 
 
 
@@ -76,7 +74,6 @@ app.post('/update', (req, res) => {
 		
 	  })
 
-
 function showObject(obj) {
 		var result = [];
 		for (var p in obj) {
@@ -97,19 +94,8 @@ app.post('/getbydate', (req, res) => {
 		var start=new Date(body[header[0]])
 		var end  =new Date(body[header[1]])
 		var kg  =body[header[2]]
-	
-		console.log(start);
-		console.log(end);
-		console.log(kg);
-		console.log("------------")
-		
-		//var start=new Date(2018,01,01);
-		//var end = new Date(2018,09,09);
-		
-		//db.collection('cars').find({"departureDate": {"$gte":start, "$lt":end},currentKg:{"$lte":"$maxKg"-kg}}).toArray((err,results) =>{
-		db.collection('cars').find({"departureDate": {"$gte":start, "$lt":end} }).toArray((err,results) =>{
 
-			
+		db.collection('cars').find({"departureDate": {"$gte":start, "$lt":end} }).toArray((err,results) =>{
 
 			var data = [];
 			results.forEach(function(element){
@@ -121,7 +107,7 @@ app.post('/getbydate', (req, res) => {
 				
 			  });
 
-			
+
 			res.json({
 			  "code":0,
 			  "msg":"Success",
@@ -146,7 +132,76 @@ app.get('/getall', (req, res) => {
 			});
 		  })
 })
-	  
+	
+
+app.post('/addpacket', (req, res) => {
+
+	console.log(req.body)
+	var carID			=req.body.carID;
+	var userID		=req.body.userID;
+	var packageKG=req.body.packageKG;
+	var query = {'_id': new ObjectId(carID)};
+	
+	console.log(carID)
+	
+	var updatedata ={ '$addToSet': {'packetlist': [userID,packageKG]}};
+	//var updatedata={ '$push': {'packetlist': "userID"}};
+	db.collection('cars').findOne(query, function(err, r1) {
+		
+		if (err){
+			 res.json({"code":-2,"msg":"CarId not found"})
+			 
+		}else
+		{
+			if (r1.currentKg + packageKG <= r1.maxKg){
+
+
+				db.collection("cars").updateOne(query, updatedata, function(err, r2) {
+					if (err){
+
+						
+
+						console.log(err)
+						console.log(r2)
+						res.json({
+							"code":-1,
+							"msg":"Unsuccessfully",
+
+						});
+						
+					}
+					else{
+
+						db.collection("packets").insertOne({"userID":userID,"carID":carID,"packet":packageKG}, function(err, r3) {
+							if (err) throw err;
+							console.log("1 packets inserted");
+						});
+
+						res.json({
+							"code":0,
+							"msg":"Successfully added",});
+						}
+						
+					
+				});
+			}
+			else{
+				res.json({"code":-3,"msg":"Not enough space"})
+			}
+			
+		}
+		
+		
+	});
+	
+})
+
+app.get('/getorders', (req, res) => {
+	console.log(req.params)
+	console.log("Params")
+	console.log(req.params.id)
+
+})
 
 app.get('/', (req, res) => {
 	console.log("first path")
