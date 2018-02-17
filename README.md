@@ -1,5 +1,5 @@
-# Patos-Backend
+Patos Team - (Öneri 2)
 
-
-- Car insertion is added
-- Database connection established
+Ahmet Görünücü
+Muhammet Fatih Altuntaş
+Halil İbrahim Açıkgöz
