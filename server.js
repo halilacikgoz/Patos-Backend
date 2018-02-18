@@ -3,16 +3,17 @@ const app = express();
 const MongoClient = require('mongodb').MongoClient
 var ObjectId = require('mongodb').ObjectID;
 const bodyParser = require('body-parser');
+const admin = require('firebase-admin');
+
+
+
+
 app.use(bodyParser.urlencoded({extended: true}))
-//app.use(bodyParser.json())
-
-
-
 
 var db;
 MongoClient.connect('mongodb://foter:12345@ds237868.mlab.com:37868/hackathon', (err, client) => {
 	if (err) return console.log(err)
-	db = client.db('hackathon') // whatever your database name is
+	db = client.db('hackathon') 
 	app.listen(process.env.PORT || 5000, function() {
 		console.log('listening on 5000')
 	});
@@ -20,6 +21,7 @@ MongoClient.connect('mongodb://foter:12345@ds237868.mlab.com:37868/hackathon', (
 
 	
 })
+
 
 app.post('/car', (req, res) => {
 		console.log(req.body);
@@ -38,16 +40,15 @@ app.post('/car', (req, res) => {
 				"msg":"Successfuly insterted",
 		  
 			  });
-		}
-		
+		}	
 	  })
 	});
 
 app.post('/update', (req, res) => {
 		console.log(req.body);
 
-		var myquery = { id: 90 };
- 	    var newvalues = { $set: {arrivalLat: 1, arrivalLong: 2 } };
+		var myquery = { id: req.body.id };
+ 	  var newvalues = { $set: {arrivalLat: 1, arrivalLong: 2 } };
 
 		db.collection("cars").updateOne(myquery, newvalues, function(err, result) {
 			console.log(err)
@@ -66,12 +67,7 @@ app.post('/update', (req, res) => {
 		  
 			  });
 			}
-			
-
 		  });
-
-		
-		
 	  })
 
 function showObject(obj) {
@@ -88,9 +84,7 @@ function showObject(obj) {
 app.post('/getbydate', (req, res) => {
 		var body=req.body
 		header=showObject(body)
-		console.log(header)
-		console.log(body)
-	
+
 		var start=new Date(body[header[0]])
 		var end  =new Date(body[header[1]])
 		var kg  =body[header[2]]
@@ -101,21 +95,15 @@ app.post('/getbydate', (req, res) => {
 				results.forEach(function(element){
 					if (parseInt(element.currentKg, 10) + parseInt(kg, 10)<= element.maxKg)
 					{
-					
 						data.push(element)
 					}
-					
 					});
-
-
 			res.json({
 			  "code":0,
 			  "msg":"Success",
 			  "records":data
 		
 			});
-		
-		
 		  })
 })
 
@@ -140,12 +128,13 @@ app.post('/addpacket', (req, res) => {
 	var carID			=req.body.carID;
 	var userID		=req.body.userID;
 	var packageKG=req.body.packageKG;
+	var latitude =req.body.slatitude;
+	var longitude=req.body.slongitude;
+	var dlatitude =req.body.dlatitude;
+	var dlongitude=req.body.dlongitude;
 	var query = {'_id': new ObjectId(carID)};
 	
 	console.log(carID)
-	
-	
-	//var updatedata={ '$push': {'packetlist': "userID"}};
 	db.collection('cars').findOne(query, function(err, r1) {
 		
 		if (err){
@@ -155,7 +144,7 @@ app.post('/addpacket', (req, res) => {
 		{
 			if (parseInt(r1.currentKg, 10) + parseInt(packageKG, 10)  <= r1.maxKg ){
 
-				var updatedata ={  $set :{ "currentKg": parseInt(r1.currentKg, 10) + parseInt(packageKG, 10) },'$addToSet': {'packetlist': [userID,packageKG]}};
+				var updatedata ={  $set :{ "currentKg": parseInt(r1.currentKg, 10) + parseInt(packageKG, 10) },'$addToSet': {'packetlist': [userID,packageKG,latitude,longitude,dlatitude,dlongitude]}};
 				db.collection("cars").updateOne(query, updatedata, function(err, r2) {
 					if (err){
 
@@ -179,8 +168,6 @@ app.post('/addpacket', (req, res) => {
 							"code":0,
 							"msg":"Successfully added",});
 						}
-						
-					
 				});
 			}
 			else{
@@ -188,54 +175,39 @@ app.post('/addpacket', (req, res) => {
 			}
 			
 		}
-		
-		
 	});
 	
 })
 
-app.get('/getorders', (req, res) => {
+app.get('/getorders',  (req, res) => {
 	var user_id = req.query['id'];
-	console.log(user_id)
-
+	console.log("--------------")
 
 	db.collection('packets').find({"userID":user_id}).toArray((err,results) =>{
-
-		if (err){
-				res.json({
-					"code":-1,
-					"msg":"eror",
-				});
-
-		}else{
-
-			var data = [];			
-			console.log(results.length)
-			console.log(results)
-			for (var i=0; i<results.length; i++) {
-				var item=results[i]
-				
-				var query = {'_id': new ObjectId(item.carID)};
-
-				db.collection('cars').findOne(query, function(err, car) {
-					console.log(car)
-					
-					console.log(results[i])
-					console.log("-----")
-					console.log(results[i])
-				});	
-				
-			}
 			res.json({
 				"code":0,
-				"msg":"succes",
+				"msg":"success",
 				"data":results
 			});
-		}
+
 		})
 		
 })
+app.get('/getcar',  (req, res) => {
+	var car_id = req.query['id'];
+	var query = {'_id': new ObjectId(car_id)};
+	
+	db.collection('cars').findOne(query, function(err, r1) {
+			res.json({
+				"code":0,
+				"msg":"succes",
+				"data":r1
+			});
+
+	
+		})
 		
+})
 
 app.get('/', (req, res) => {
 	console.log("first path")
